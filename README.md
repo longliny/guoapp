@@ -76,6 +76,18 @@ Flutter 多端独立短剧 / 影视应用，原名「短剧库 APP」。站源�
 
 ### GitHub Actions
 
+#### Windows 云端构建（本机无需开发环境）
+
+当前 `build.yml` 中的 Windows 与 iOS 任务已停用。新增独立流程 [Build Windows packages](.github/workflows/windows-package.yml)，在 GitHub 的 Windows 2022 运行器上配置 Flutter、Go、MinGW、Visual C++ 和媒体测试工具，构建红果鉴与真果鉴两版。用户电脑只需解压最终 ZIP 并运行 EXE。
+
+1. 将项目放入有写入权限的 GitHub 仓库并启用 Actions。
+2. 在默认分支运行 **Actions → Build Windows packages → Run workflow**，或将该流程连同源码推送到 `windows-build` 分支触发构建。
+3. 在运行页面的 Artifacts 下载 `hongguojian-windows-x64` 或 `zhenguojian-windows-x64`，解压其中 `dist/windows` 下的应用 ZIP。保留 EXE 旁的 DLL 和 `data` 目录。
+
+流程检查构建脚本、Flutter 测试及合成视频播放；测试失败会使任务失败。已成功编译的包仍会保留，不能将“存在下载包”视为验收通过。云端运行器的图形与音频能力有限，出包后还需在用户电脑验证窗口、声音、画面及联网播放。本次仅准备了流程，尚未执行云端构建或 Windows 验收。
+
+下面为原有多平台流程的说明，其中 Windows / iOS 出包与发布条件与当前 `build.yml` 不一致，以工作流文件为准。
+
 推送 `main` / `master`、`v*` 标签、提交 PR，或手动运行 **Build app packages**，会先检查再构建两版（默认与 `--all-sources`）：
 
 | 产物 | 内容 |

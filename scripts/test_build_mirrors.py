@@ -78,6 +78,21 @@ class BuildMirrorTests(unittest.TestCase):
             self.assertEqual(len(backups), 1)
             self.assertEqual(backups[0].read_bytes(), original)
 
+    def test_pub_mirror_preserves_lf_and_crlf_bytes(self):
+        for newline in (b'\n', b'\r\n'):
+            with self.subTest(newline=newline), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                lock = root / 'pubspec.lock'
+                original = newline.join([
+                    b'packages:', b'  test:', b'    description:',
+                    b'      url: "https://pub.dev"', b'      sha256: abc123', b'',
+                ])
+                lock.write_bytes(original)
+                with mirrored_pub_lockfile(root, {'PUB_HOSTED_URL': 'https://pub.flutter-io.cn'}):
+                    self.assertEqual(lock.read_bytes(), original.replace(
+                        b'https://pub.dev', b'https://pub.flutter-io.cn'))
+                self.assertEqual(lock.read_bytes(), original)
+
 
 if __name__ == '__main__':
     unittest.main()
