@@ -11,7 +11,12 @@ Future<void> runPackageSmoke(List<String> arguments) async {
   final report = File(arguments[1]), input = arguments[2];
   Player? player;
   try {
-    final repository = NativeRepository();
+    final repository = NativeRepository(
+      background: true,
+      dataDirectory: Directory(
+        '${report.parent.path}${Platform.pathSeparator}native-data',
+      ),
+    );
     await repository.initialize();
     final executor = FFmpegExecutor();
     final probe = await executor.probe(input);
@@ -33,6 +38,7 @@ Future<void> runPackageSmoke(List<String> arguments) async {
       configuration: const PlayerConfiguration(muted: true, vo: 'null'),
     );
     await player.setAudioTrack(AudioTrack.no());
+    await player.setVideoTrack(VideoTrack.auto());
     final advancing = player.stream.position.firstWhere(
       (time) => time.inMilliseconds >= 400,
     );

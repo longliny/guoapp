@@ -188,8 +188,9 @@ abstract class AppRepository {
 
 class NativeRepository extends AppRepository {
   static final _coverDecoder = CoverDecoder();
-  NativeRepository({this.background = false});
+  NativeRepository({this.background = false, this.dataDirectory});
   final bool background;
+  final Directory? dataDirectory;
   LocalStore? access;
   final _readOwner = DateTime.now().microsecondsSinceEpoch.toString();
   int _readSequence = 0;
@@ -630,7 +631,8 @@ class NativeRepository extends AppRepository {
 
   @override
   Future<void> initialize() async {
-    final directory = await getApplicationSupportDirectory();
+    final directory = dataDirectory ?? await getApplicationSupportDirectory();
+    await directory.create(recursive: true);
     final build = await _call({
       'action': 'initialize',
       'directory': directory.path,

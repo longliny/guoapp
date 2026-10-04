@@ -12,6 +12,22 @@ from app_build import BuildVariant, add_variant_argument
 root = Path(__file__).resolve().parents[1]
 
 
+def run_package(executable, media, report):
+    try:
+        result = subprocess.run([str(executable), '--package-smoke', str(report), str(media)],
+                                cwd=executable.parent, check=False, timeout=90)
+    except subprocess.TimeoutExpired:
+        return {'ok': False, 'error': 'Windows package smoke timed out after 90 seconds'}
+    if report.is_file():
+        evidence = json.loads(report.read_text(encoding='utf-8'))
+    else:
+        evidence = {'ok': False, 'error': 'Windows package did not produce a smoke report'}
+    evidence['exitCode'] = result.returncode
+    if result.returncode != 0:
+        evidence['ok'] = False
+    return evidence
+
+
 def main():
     parser = argparse.ArgumentParser()
     add_variant_argument(parser)
@@ -29,15 +45,13 @@ def main():
                         '-i', 'testsrc2=size=160x90:rate=12', '-t', '3',
                         '-c:v', 'libx264', '-threads', '1', str(media)], check=True)
         report = directory / 'result.json'
-        subprocess.run([str(directory / (variant.slug + '.exe')), '--package-smoke', str(report), str(media)],
-                       cwd=directory, check=True, timeout=90)
-        evidence = json.loads(report.read_text(encoding='utf-8'))
-        if evidence.get('ok') is not True:
-            raise SystemExit('Windows 包启动验收未通过。')
+        evidence = run_package(directory / (variant.slug + '.exe'), media, report)
         output = root / 'build' / 'windows-package-smoke.json'
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(evidence, indent=2) + '\n', encoding='utf-8')
         print(json.dumps(evidence))
+        if evidence.get('ok') is not True:
+            raise SystemExit('Windows 包启动验收未通过。')
 
 
 if __name__ == '__main__':
